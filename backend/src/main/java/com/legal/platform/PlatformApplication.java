@@ -12,6 +12,9 @@ public class PlatformApplication {
         loadEnv(".");
         loadEnv("..");
 
+        // Auto-configure Spring Data Source from DATABASE_URL if present (useful for Render/Heroku)
+        configureDatabaseUrl();
+
         SpringApplication.run(PlatformApplication.class, args);
     }
 
@@ -28,6 +31,43 @@ public class PlatformApplication {
             });
         } catch (Exception e) {
             // Fail silently if .env is missing or invalid
+        }
+    }
+
+    private static void configureDatabaseUrl() {
+        String databaseUrl = System.getenv("DATABASE_URL");
+        if (databaseUrl == null) {
+            databaseUrl = System.getProperty("DATABASE_URL");
+        }
+        
+        if (databaseUrl != null && (databaseUrl.startsWith("postgres://") || databaseUrl.startsWith("postgresql://"))) {
+            try {
+                String cleanedUrl = databaseUrl.replaceFirst("postgres(ql)?://", "");
+                int atSignIndex = cleanedUrl.indexOf('@');
+                if (atSignIndex != -1) {
+                    String userInfo = cleanedUrl.substring(0, atSignIndex);
+                    String hostInfo = cleanedUrl.substring(atSignIndex + 1);
+                    
+                    String[] userParts = userInfo.split(":");
+                    String username = userParts[0];
+                    String password = userParts.length > 1 ? userParts[1] : "";
+                    
+                    String dbUrl = "jdbc:postgresql://" + hostInfo;
+                    if (hostInfo.contains("render.com") && !hostInfo.contains("sslmode")) {
+                        if (hostInfo.contains("?")) {
+                            dbUrl += "&sslmode=require";
+                        } else {
+                            dbUrl += "?sslmode=require";
+                        }
+                    }
+                    
+                    System.setProperty("spring.datasource.url", dbUrl);
+                    System.setProperty("spring.datasource.username", username);
+                    System.setProperty("spring.datasource.password", password);
+                }
+            } catch (Exception e) {
+                // Fail silently
+            }
         }
     }
 }
