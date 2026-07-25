@@ -1,0 +1,299 @@
+AI Legal Consultation & Lawyer Booking Platform
+
+
+
+Architecture:
+
+
+
+
+                              +----------------------+
+                              |     Web Browser      |
+                              |   (React + Vite)     |
+                              +----------+-----------+
+                                         |
+                                         | HTTPS/REST API
+                                         |
+                    +--------------------▼--------------------+
+                    |        Spring Boot Backend API          |
+                    |-----------------------------------------|
+                    | Authentication (JWT)                    |
+                    | User Management                         |
+                    | Lawyer Management                       |
+                    | Appointment Management                  |
+                    | AI Integration Service                  |
+                    | Document Management                     |
+                    | Notification Service                    |
+                    | Admin Management                        |
+                    +--------------------+--------------------+
+                                         |
+          +------------------------------+------------------------------+
+          |                              |                              |
+          ▼                              ▼                              ▼
++---------------------+      +----------------------+      +----------------------+
+|    PostgreSQL DB    |      |     Gemini API       |      |    Cloud Storage     |
+|---------------------|      |----------------------|      |----------------------|
+| Users               |      | AI Legal Chat        |      | Legal Documents      |
+| Lawyers             |      | Document Summary     |      | Images               |
+| Appointments        |      | Lawyer Suggestions   |      | Certificates         |
+| Reviews             |      | Clause Explanation   |      | Contracts            |
+| AI Chat History     |      +----------------------+      +----------------------+
+| Notifications       |
++---------------------+
+
+
+
+AI Module Architecture:
+
+
+User Question
+
+↓
+
+React Chat UI
+
+↓
+
+POST /api/ai/chat
+
+↓
+
+AIController
+
+↓
+
+AIService
+
+↓
+
+Gemini API
+
+↓
+
+AI Response
+
+↓
+
+Store Chat History
+
+↓
+
+Return Response to User
+
+
+
+
+Appointment Flow:
+
+
+Client
+
+↓
+
+Search Lawyer
+
+↓
+
+View Profile
+
+↓
+
+Select Date
+
+↓
+
+Select Time
+
+↓
+
+Book Appointment
+
+↓
+
+Database
+
+↓
+
+Notification Sent
+
+↓
+
+Lawyer Dashboard Updated
+
+
+
+Authentication Flow:
+
+
+Register/Login
+
+↓
+
+Spring Security
+
+↓
+
+JWT Generated
+
+↓
+
+React Stores JWT
+
+↓
+
+Every API Request
+
+↓
+
+Authorization Header
+
+↓
+
+JWT Validation
+
+↓
+
+Access Granted
+
+
+Document Upload Flow:
+
+
+Upload PDF
+
+↓
+
+React
+
+↓
+
+Spring Boot
+
+↓
+
+Cloud Storage
+
+↓
+
+File URL Saved
+
+↓
+
+Gemini Analysis
+
+↓
+
+Summary Generated
+
+↓
+
+Display Results
+
+
+Notification Flow:
+
+
+Appointment Booked
+
+↓
+
+Notification Service
+
+↓
+
+Email
+
+↓
+
+Client
+
+↓
+
+Lawyer
+
+Role-Based Access:
+                    User
+                     │
+        ┌────────────┼────────────┐
+        ▼            ▼            ▼
+
+     Client       Lawyer       Admin
+
+
+Client
+Register/Login
+AI Chat
+Search Lawyers
+Book Appointment
+Upload Documents
+Reviews
+Lawyer
+Accept Appointments
+Manage Profile
+Chat with Clients
+View Dashboard
+Admin
+Verify Lawyers
+Manage Users
+View Reports
+Manage Categories
+Database Architecture
+Users
+ │
+ ├──────────────┐
+ │              │
+ ▼              ▼
+
+Lawyers     AI Chats
+ │
+ ▼
+
+Appointments
+ │
+ ▼
+
+Payments
+
+Users
+ │
+ ▼
+
+Documents
+
+Lawyers
+ │
+ ▼
+
+Reviews
+Frontend Architecture
+React
+│
+├── Pages
+│      ├── Home
+│      ├── Login
+│      ├── Register
+│      ├── Lawyers
+│      ├── Appointment
+│      ├── Dashboard
+│      ├── AI Chat
+│      └── Admin
+│
+├── Components
+│      ├── Navbar
+│      ├── Footer
+│      ├── Lawyer Card
+│      ├── Appointment Card
+│      ├── Chat Window
+│      └── Review Card
+│
+├── Services
+│      ├── AuthService
+│      ├── LawyerService
+│      ├── AppointmentService
+│      ├── AIService
+│      └── UserService
+│
+└── Context
+       └── Authentication
+
+
