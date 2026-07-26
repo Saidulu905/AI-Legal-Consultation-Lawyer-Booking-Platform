@@ -48,11 +48,25 @@ public class PlatformApplication {
 
     private static void configureDatabaseUrl() {
         String databaseUrl = getEnv("DATABASE_URL");
+        String jdbcUrl = getEnv("JDBC_DATABASE_URL");
+        String dbUser = getEnv("DB_USER");
+        String dbPassword = getEnv("DB_PASSWORD");
         
         System.out.println("=== Database Configuration ===");
         System.out.println("DATABASE_URL: " + (databaseUrl != null ? databaseUrl.substring(0, Math.min(50, databaseUrl.length())) + "..." : "null"));
+        System.out.println("JDBC_DATABASE_URL: " + (jdbcUrl != null ? jdbcUrl.substring(0, Math.min(50, jdbcUrl.length())) + "..." : "null"));
+        System.out.println("DB_USER: " + dbUser);
+        System.out.println("DB_PASSWORD: " + (dbPassword != null ? "***" : "null"));
         
-        if (databaseUrl != null && (databaseUrl.startsWith("postgres://") || databaseUrl.startsWith("postgresql://"))) {
+        // Try JDBC_DATABASE_URL first (Render-specific)
+        if (jdbcUrl != null && !jdbcUrl.isBlank()) {
+            System.out.println("Using JDBC_DATABASE_URL");
+            setIfMissing("SPRING_DATASOURCE_URL", jdbcUrl);
+            if (dbUser != null) setIfMissing("SPRING_DATASOURCE_USERNAME", dbUser);
+            if (dbPassword != null) setIfMissing("SPRING_DATASOURCE_PASSWORD", dbPassword);
+        }
+        // Fall back to DATABASE_URL parsing
+        else if (databaseUrl != null && (databaseUrl.startsWith("postgres://") || databaseUrl.startsWith("postgresql://"))) {
             try {
                 String cleanedUrl = databaseUrl.replaceFirst("postgres(ql)?://", "");
                 int atSignIndex = cleanedUrl.indexOf('@');
@@ -85,10 +99,11 @@ public class PlatformApplication {
                 e.printStackTrace();
             }
         } else {
-            System.out.println("DATABASE_URL not set or invalid format, using defaults");
+            System.out.println("No database URL found, using defaults");
         }
         
         System.out.println("Final SPRING_DATASOURCE_URL: " + getEnv("SPRING_DATASOURCE_URL"));
+        System.out.println("Final SPRING_DATASOURCE_USERNAME: " + getEnv("SPRING_DATASOURCE_USERNAME"));
         System.out.println("=============================");
     }
 
