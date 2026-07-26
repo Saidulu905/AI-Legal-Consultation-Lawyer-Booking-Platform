@@ -1,7 +1,7 @@
 # Render Deployment Guide
 # AI Legal Consultation & Lawyer Booking Platform
 
-This guide will help you deploy the entire platform (frontend, backend, and database) on Render using the existing `render.yaml` blueprint.
+This guide will help you deploy the entire platform (frontend, backend, and database) on Render using manual service creation.
 
 ## Prerequisites
 
@@ -9,39 +9,56 @@ This guide will help you deploy the entire platform (frontend, backend, and data
 2. **GitHub Repository**: Your code must be pushed to a GitHub repository
 3. **Gemini API Key**: Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
-## Quick Deployment (Using Blueprint)
+## Manual Deployment Steps
 
-### Step 1: Push Code to GitHub
-
-```bash
-git add .
-git commit -m "Ready for Render deployment"
-git push origin main
-```
-
-### Step 2: Deploy on Render
+### Step 1: Create PostgreSQL Database
 
 1. Log in to [Render Dashboard](https://dashboard.render.com)
-2. Click **"New +"** → **"Blueprint"**
-3. Connect your GitHub repository
-4. Render will automatically detect the `render.yaml` file
-5. Review the configuration:
-   - **Database**: PostgreSQL (free tier)
-   - **Backend**: Docker-based Spring Boot API
-   - **Frontend**: Static React + Vite site
-6. Click **"Apply"** to start deployment
+2. Click **"New +"** → **"PostgreSQL"**
+3. Configure database:
+   - **Name**: `legal-platform-db`
+   - **Database**: `legal_platform`
+   - **User**: `legal_platform_user`
+   - **Region**: Choose nearest region
+   - **Plan**: Free
+4. Click **"Create Database"**
+5. Wait for database to be "Available" (may take 2-3 minutes)
+6. Copy the **Internal Database URL** from the database page
 
-### Step 3: Set GEMINI_API_KEY
+### Step 2: Deploy Backend (Spring Boot API)
 
-After deployment:
+1. Click **"New +"** → **"Web Service"**
+2. Connect your GitHub repository
+3. Configure service:
+   - **Name**: `legal-platform-api`
+   - **Region**: Same as database
+   - **Branch**: `main`
+   - **Root Directory**: `backend`
+   - **Runtime**: Docker
+   - **Plan**: Free
+4. Add Environment Variables:
+   - `DATABASE_URL`: Paste the Internal Database URL from Step 1
+   - `JWT_SECRET`: Generate a strong random string (use: `openssl rand -base64 32`)
+   - `GEMINI_API_KEY`: Your actual Gemini API key
+5. Click **"Create Web Service"**
+6. Wait for deployment to complete
 
-1. Go to your **legal-platform-api** service in Render
-2. Navigate to **Environment** tab
-3. Add environment variable:
-   - Key: `GEMINI_API_KEY`
-   - Value: Your actual Gemini API key
-4. Click **"Save Changes"**
-5. **Restart** the service to apply changes
+### Step 3: Deploy Frontend (React + Vite)
+
+1. Click **"New +"** → **"Static Site"**
+2. Connect your GitHub repository
+3. Configure service:
+   - **Name**: `legal-platform-frontend`
+   - **Region**: Same as backend
+   - **Branch**: `main`
+   - **Root Directory**: `frontend`
+   - **Build Command**: `npm install && npm run build`
+   - **Publish Directory**: `dist`
+   - **Plan**: Free
+4. Add Environment Variables:
+   - `VITE_API_BASE_URL`: Use the backend URL (e.g., `https://legal-platform-api.onrender.com`)
+5. Click **"Create Static Site"**
+6. Wait for deployment to complete
 
 ## Services Overview
 
@@ -50,7 +67,7 @@ After deployment:
 - **Plan**: Free tier
 - **Database**: legal_platform
 - **User**: legal_platform_user
-- **Connection**: Automatically linked to backend via `DATABASE_URL`
+- **Connection**: Manually linked via `DATABASE_URL` environment variable
 
 ### 2. Backend API (Spring Boot)
 - **Name**: legal-platform-api
@@ -58,9 +75,9 @@ After deployment:
 - **Port**: 8080
 - **Health Check**: `/health`
 - **Environment Variables**:
-  - `DATABASE_URL`: Auto-populated from database
-  - `JWT_SECRET`: Auto-generated
-  - `GEMINI_API_KEY`: Manual setup required
+  - `DATABASE_URL`: Manually set from database Internal Database URL
+  - `JWT_SECRET`: Manually generated
+  - `GEMINI_API_KEY`: Manually set
 
 ### 3. Frontend (React + Vite)
 - **Name**: legal-platform-frontend
@@ -68,7 +85,7 @@ After deployment:
 - **Build Command**: `npm install && npm run build`
 - **Publish Directory**: `dist`
 - **Environment Variables**:
-  - `VITE_API_BASE_URL`: Auto-populated from backend URL
+  - `VITE_API_BASE_URL`: Manually set to backend URL
 
 ## Verification
 
