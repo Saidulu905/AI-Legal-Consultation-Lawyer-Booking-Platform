@@ -20,6 +20,18 @@ services:
         fromDatabase:
           name: legal-platform-db
           property: connectionString
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: legal-platform-db
+          property: jdbcConnectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: legal-platform-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: legal-platform-db
+          property: password
       - key: JWT_SECRET
         generateValue: true
       - key: GEMINI_API_KEY
