@@ -49,6 +49,9 @@ public class PlatformApplication {
     private static void configureDatabaseUrl() {
         String databaseUrl = getEnv("DATABASE_URL");
         
+        System.out.println("=== Database Configuration ===");
+        System.out.println("DATABASE_URL: " + (databaseUrl != null ? databaseUrl.substring(0, Math.min(50, databaseUrl.length())) + "..." : "null"));
+        
         if (databaseUrl != null && (databaseUrl.startsWith("postgres://") || databaseUrl.startsWith("postgresql://"))) {
             try {
                 String cleanedUrl = databaseUrl.replaceFirst("postgres(ql)?://", "");
@@ -70,14 +73,23 @@ public class PlatformApplication {
                         }
                     }
                     
+                    System.out.println("Parsed JDBC URL: " + dbUrl.substring(0, Math.min(50, dbUrl.length())) + "...");
+                    System.out.println("Username: " + username);
+                    
                     setIfMissing("SPRING_DATASOURCE_URL", dbUrl);
                     setIfMissing("SPRING_DATASOURCE_USERNAME", username);
                     setIfMissing("SPRING_DATASOURCE_PASSWORD", password);
                 }
             } catch (Exception e) {
-                // Fail silently
+                System.err.println("Error parsing DATABASE_URL: " + e.getMessage());
+                e.printStackTrace();
             }
+        } else {
+            System.out.println("DATABASE_URL not set or invalid format, using defaults");
         }
+        
+        System.out.println("Final SPRING_DATASOURCE_URL: " + getEnv("SPRING_DATASOURCE_URL"));
+        System.out.println("=============================");
     }
 
     private static String buildJdbcUrl(String host, String port, String database) {
