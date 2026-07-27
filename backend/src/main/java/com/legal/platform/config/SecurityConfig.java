@@ -32,12 +32,20 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/health").permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/uploads/**").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
+.authorizeHttpRequests(auth -> auth
+    .requestMatchers(
+        "/",
+        "/health",
+        "/error",
+        "/api/auth/**",
+        "/uploads/**",
+        "/swagger-ui/**",
+        "/swagger-ui.html",
+        "/v3/api-docs/**"
+    ).permitAll()
+    .requestMatchers("/api/admin/**").hasRole("ADMIN")
+    .anyRequest().authenticated()
+)
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
