@@ -13,4 +13,13 @@ public class HealthController {
     public ResponseEntity<Map<String, String>> health() {
         return ResponseEntity.ok(Map.of("status", "UP"));
     }
+
+    @GetMapping("/")
+    public ResponseEntity<Map<String, String>> index() {
+        return ResponseEntity.ok(Map.of(
+            "name", "LexiFlow AI Legal Consultation & Lawyer Booking Platform API",
+            "status", "UP",
+            "healthCheck", "/health"
+        ));
+    }
 }
