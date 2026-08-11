@@ -1,11 +1,14 @@
 package com.legal.platform.controller;
 
 import com.legal.platform.dto.*;
+import com.legal.platform.model.Category;
+import com.legal.platform.repository.CategoryRepository;
 import com.legal.platform.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -13,6 +16,12 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final CategoryRepository categoryRepository;
+
+    @GetMapping("/categories")
+    public ResponseEntity<List<Category>> getAllCategories() {
+        return ResponseEntity.ok(categoryRepository.findAll());
+    }
 
     @PostMapping("/register")
     public ResponseEntity<UserDTO> register(@RequestBody RegisterRequest request) {
