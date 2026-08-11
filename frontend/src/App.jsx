@@ -47,13 +47,14 @@ const Navbar = () => {
 
   return (
     <nav className="glass-panel" style={{
-      margin: '16px 24px',
+      position: 'fixed',
+      top: '16px',
+      left: '24px',
+      right: '24px',
       padding: '12px 24px',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      position: 'sticky',
-      top: '16px',
       zIndex: 1000
     }}>
       <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
@@ -134,7 +135,7 @@ function App() {
       <Router>
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <Navbar />
-          <div style={{ flex: 1, padding: '0 24px' }}>
+          <div style={{ flex: 1, padding: '96px 24px 0 24px' }}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
