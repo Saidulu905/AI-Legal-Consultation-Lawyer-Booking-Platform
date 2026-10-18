@@ -3,6 +3,10 @@ package com.legal.platform;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+import java.util.HashMap;
+import java.util.Map;
 
 @SpringBootApplication
 public class PlatformApplication {
@@ -15,7 +19,15 @@ public class PlatformApplication {
         configureDatabaseUrl();
         mapLegacyDatabaseEnv();
 
-        SpringApplication.run(PlatformApplication.class, args);
+        SpringApplication app = new SpringApplication(PlatformApplication.class);
+        app.addInitializers(context -> {
+            ConfigurableEnvironment env = context.getEnvironment();
+            Map<String, Object> overrides = resolveDatabaseOverrides(env);
+            if (!overrides.isEmpty()) {
+                env.getPropertySources().addFirst(new MapPropertySource("renderDbOverrides", overrides));
+            }
+        });
+        app.run(args);
     }
 
     private static void loadEnv(String directory) {
@@ -142,6 +154,62 @@ public class PlatformApplication {
     private static String getEnv(String key, String defaultValue) {
         String value = getEnv(key);
         return value != null ? value : defaultValue;
+    }
+
+    private static Map<String, Object> resolveDatabaseOverrides(ConfigurableEnvironment env) {
+        Map<String, Object> overrides = new HashMap<>();
+        String rawUrl = env.getProperty("DATABASE_URL");
+        if (rawUrl == null || rawUrl.isBlank()) {
+            rawUrl = env.getProperty("SPRING_DATASOURCE_URL");
+        }
+        if (rawUrl == null || rawUrl.isBlank()) {
+            rawUrl = env.getProperty("spring.datasource.url");
+        }
+
+        if (rawUrl != null && (rawUrl.startsWith("postgres://") || rawUrl.startsWith("postgresql://") || rawUrl.startsWith("mysql://"))) {
+            try {
+                boolean isMysql = rawUrl.startsWith("mysql://");
+                String cleanedUrl = rawUrl.replaceFirst("(postgres(ql)?|mysql)://", "");
+                int atSignIndex = cleanedUrl.indexOf('@');
+                if (atSignIndex != -1) {
+                    String userInfo = cleanedUrl.substring(0, atSignIndex);
+                    String hostInfo = cleanedUrl.substring(atSignIndex + 1);
+
+                    String[] userParts = userInfo.split(":");
+                    String username = userParts[0];
+                    String password = userParts.length > 1 ? userParts[1] : "";
+
+                    String dbUrl = (isMysql ? "jdbc:mysql://" : "jdbc:postgresql://") + hostInfo;
+                    if (isMysql) {
+                        if (!dbUrl.contains("?")) {
+                            dbUrl += "?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+                        }
+                    } else if (hostInfo.contains("render.com") && !hostInfo.contains("sslmode")) {
+                        if (hostInfo.contains("?")) {
+                            dbUrl += "&sslmode=require";
+                        } else {
+                            dbUrl += "?sslmode=require";
+                        }
+                    }
+
+                    overrides.put("spring.datasource.url", dbUrl);
+                    overrides.put("SPRING_DATASOURCE_URL", dbUrl);
+                    overrides.put("spring.datasource.username", username);
+                    overrides.put("SPRING_DATASOURCE_USERNAME", username);
+                    overrides.put("spring.datasource.password", password);
+                    overrides.put("SPRING_DATASOURCE_PASSWORD", password);
+                    System.out.println("Applied Spring Environment DB Overrides: " + dbUrl.substring(0, Math.min(50, dbUrl.length())) + "...");
+                } else {
+                    String dbUrl = "jdbc:" + rawUrl;
+                    overrides.put("spring.datasource.url", dbUrl);
+                    overrides.put("SPRING_DATASOURCE_URL", dbUrl);
+                    System.out.println("Applied Spring Environment DB Overrides: " + dbUrl);
+                }
+            } catch (Exception e) {
+                System.err.println("Error resolving database overrides: " + e.getMessage());
+            }
+        }
+        return overrides;
     }
 
     private static void setIfMissing(String key, String value) {
