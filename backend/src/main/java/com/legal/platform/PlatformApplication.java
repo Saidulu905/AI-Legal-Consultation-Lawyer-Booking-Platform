@@ -104,11 +104,15 @@ public class PlatformApplication {
                     System.out.println("Username: " + username);
                     
                     System.setProperty("SPRING_DATASOURCE_URL", dbUrl);
+                    System.setProperty("spring.datasource.url", dbUrl);
                     System.setProperty("SPRING_DATASOURCE_USERNAME", username);
+                    System.setProperty("spring.datasource.username", username);
                     System.setProperty("SPRING_DATASOURCE_PASSWORD", password);
+                    System.setProperty("spring.datasource.password", password);
                 } else {
                     String dbUrl = "jdbc:" + databaseUrl;
                     System.setProperty("SPRING_DATASOURCE_URL", dbUrl);
+                    System.setProperty("spring.datasource.url", dbUrl);
                 }
             } catch (Exception e) {
                 System.err.println("Error parsing DATABASE_URL: " + e.getMessage());
