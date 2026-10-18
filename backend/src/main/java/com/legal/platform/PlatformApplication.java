@@ -48,6 +48,14 @@ public class PlatformApplication {
 
     private static void configureDatabaseUrl() {
         String databaseUrl = getEnv("DATABASE_URL");
+        // Also inspect SPRING_DATASOURCE_URL in case it was passed without jdbc: prefix
+        if (databaseUrl == null || databaseUrl.isBlank()) {
+            String springUrl = getEnv("SPRING_DATASOURCE_URL");
+            if (springUrl != null && !springUrl.startsWith("jdbc:")) {
+                databaseUrl = springUrl;
+            }
+        }
+
         String jdbcUrl = getEnv("JDBC_DATABASE_URL");
         String dbUser = getEnv("DB_USER");
         String dbPassword = getEnv("DB_PASSWORD");
@@ -61,11 +69,11 @@ public class PlatformApplication {
         // Try JDBC_DATABASE_URL first (Render-specific)
         if (jdbcUrl != null && !jdbcUrl.isBlank()) {
             System.out.println("Using JDBC_DATABASE_URL");
-            setIfMissing("SPRING_DATASOURCE_URL", jdbcUrl);
-            if (dbUser != null) setIfMissing("SPRING_DATASOURCE_USERNAME", dbUser);
-            if (dbPassword != null) setIfMissing("SPRING_DATASOURCE_PASSWORD", dbPassword);
+            System.setProperty("SPRING_DATASOURCE_URL", jdbcUrl);
+            if (dbUser != null) System.setProperty("SPRING_DATASOURCE_USERNAME", dbUser);
+            if (dbPassword != null) System.setProperty("SPRING_DATASOURCE_PASSWORD", dbPassword);
         }
-        // Fall back to DATABASE_URL parsing
+        // Fall back to DATABASE_URL parsing (handles postgres://, postgresql://, mysql://)
         else if (databaseUrl != null && (databaseUrl.startsWith("postgres://") || databaseUrl.startsWith("postgresql://") || databaseUrl.startsWith("mysql://"))) {
             try {
                 boolean isMysql = databaseUrl.startsWith("mysql://");
@@ -95,9 +103,12 @@ public class PlatformApplication {
                     System.out.println("Parsed JDBC URL: " + dbUrl.substring(0, Math.min(50, dbUrl.length())) + "...");
                     System.out.println("Username: " + username);
                     
-                    setIfMissing("SPRING_DATASOURCE_URL", dbUrl);
-                    setIfMissing("SPRING_DATASOURCE_USERNAME", username);
-                    setIfMissing("SPRING_DATASOURCE_PASSWORD", password);
+                    System.setProperty("SPRING_DATASOURCE_URL", dbUrl);
+                    System.setProperty("SPRING_DATASOURCE_USERNAME", username);
+                    System.setProperty("SPRING_DATASOURCE_PASSWORD", password);
+                } else {
+                    String dbUrl = "jdbc:" + databaseUrl;
+                    System.setProperty("SPRING_DATASOURCE_URL", dbUrl);
                 }
             } catch (Exception e) {
                 System.err.println("Error parsing DATABASE_URL: " + e.getMessage());
@@ -117,9 +128,9 @@ public class PlatformApplication {
     }
 
     private static String getEnv(String key) {
-        String value = System.getenv(key);
+        String value = System.getProperty(key);
         if (value == null) {
-            value = System.getProperty(key);
+            value = System.getenv(key);
         }
         return value;
     }
