@@ -12,8 +12,8 @@ public class PlatformApplication {
         loadEnv(".");
         loadEnv("..");
 
-        mapLegacyDatabaseEnv();
         configureDatabaseUrl();
+        mapLegacyDatabaseEnv();
 
         SpringApplication.run(PlatformApplication.class, args);
     }
@@ -38,12 +38,12 @@ public class PlatformApplication {
         if (getEnv("SPRING_DATASOURCE_URL") == null) {
             setIfMissing("SPRING_DATASOURCE_URL", buildJdbcUrl(
                     getEnv("DB_HOST", "localhost"),
-                    getEnv("DB_PORT", "5432"),
+                    getEnv("DB_PORT", "3306"),
                     getEnv("DB_NAME", "legal_platform")
             ));
         }
-        setIfMissing("SPRING_DATASOURCE_USERNAME", getEnv("DB_USERNAME", "postgres"));
-        setIfMissing("SPRING_DATASOURCE_PASSWORD", getEnv("DB_PASSWORD", "postgres"));
+        setIfMissing("SPRING_DATASOURCE_USERNAME", getEnv("DB_USERNAME", "root"));
+        setIfMissing("SPRING_DATASOURCE_PASSWORD", getEnv("DB_PASSWORD", ""));
     }
 
     private static void configureDatabaseUrl() {
@@ -66,9 +66,10 @@ public class PlatformApplication {
             if (dbPassword != null) setIfMissing("SPRING_DATASOURCE_PASSWORD", dbPassword);
         }
         // Fall back to DATABASE_URL parsing
-        else if (databaseUrl != null && (databaseUrl.startsWith("postgres://") || databaseUrl.startsWith("postgresql://"))) {
+        else if (databaseUrl != null && (databaseUrl.startsWith("postgres://") || databaseUrl.startsWith("postgresql://") || databaseUrl.startsWith("mysql://"))) {
             try {
-                String cleanedUrl = databaseUrl.replaceFirst("postgres(ql)?://", "");
+                boolean isMysql = databaseUrl.startsWith("mysql://");
+                String cleanedUrl = databaseUrl.replaceFirst("(postgres(ql)?|mysql)://", "");
                 int atSignIndex = cleanedUrl.indexOf('@');
                 if (atSignIndex != -1) {
                     String userInfo = cleanedUrl.substring(0, atSignIndex);
@@ -78,8 +79,12 @@ public class PlatformApplication {
                     String username = userParts[0];
                     String password = userParts.length > 1 ? userParts[1] : "";
                     
-                    String dbUrl = "jdbc:postgresql://" + hostInfo;
-                    if (hostInfo.contains("render.com") && !hostInfo.contains("sslmode")) {
+                    String dbUrl = (isMysql ? "jdbc:mysql://" : "jdbc:postgresql://") + hostInfo;
+                    if (isMysql) {
+                        if (!dbUrl.contains("?")) {
+                            dbUrl += "?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+                        }
+                    } else if (hostInfo.contains("render.com") && !hostInfo.contains("sslmode")) {
                         if (hostInfo.contains("?")) {
                             dbUrl += "&sslmode=require";
                         } else {
@@ -108,7 +113,7 @@ public class PlatformApplication {
     }
 
     private static String buildJdbcUrl(String host, String port, String database) {
-        return "jdbc:postgresql://" + host + ":" + port + "/" + database;
+        return "jdbc:mysql://" + host + ":" + port + "/" + database + "?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
     }
 
     private static String getEnv(String key) {
